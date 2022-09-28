@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using BepInEx;
@@ -81,14 +82,14 @@ namespace MaxPlayerCount
             }
         }
 
-        [HarmonyTranspiler]
+        /*[HarmonyTranspiler]
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_PeerInfo))]
         static IEnumerable<CodeInstruction> MaxPlayersPatch(IEnumerable<CodeInstruction> instructions)
         {
             var found = false;
             foreach (var instruction in instructions)
             {
-                if (instruction.opcode == OpCodes.Ldc_I4_S)
+                if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 10)
                 {
                     MaxPlayerCountLogger.LogDebug("Found Ldc_I4_S, changing the value to " + _maxPlayers.Value);
                     yield return new CodeInstruction(OpCodes.Call, ReplacePlayerLimit);
@@ -100,12 +101,17 @@ namespace MaxPlayerCount
 
             if (found is false)
                 MaxPlayerCountLogger.LogError("Cannot find <Stdfld someField> in OriginalType.OriginalMethod");
+        }*/
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_PeerInfo))]
+        static IEnumerable<CodeInstruction> MaxPlayersPatch2(IEnumerable<CodeInstruction> instructions)
+        {
+            return new CodeMatcher(instructions).MatchForward(false, new CodeMatch(OpCodes.Ldc_I4_S, 10))
+                .Set(OpCodes.Call, Transpilers.EmitDelegate(ReplacePlayerLimit).operand).InstructionEnumeration();
         }
 
-        private static int ReplacePlayerLimit()
-        {
-            return _maxPlayers.Value;
-        }
+        private static int ReplacePlayerLimit() => _maxPlayers.Value;
 
 
         #region ConfigOptions
