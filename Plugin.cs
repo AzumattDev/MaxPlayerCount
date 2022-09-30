@@ -14,6 +14,7 @@ using Steamworks;
 namespace MaxPlayerCount
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
+    [BepInIncompatibility("com.odinplusqol.mod")]
     public class MaxPlayerCountPlugin : BaseUnityPlugin
     {
         internal const string ModName = "MaxPlayerCount";

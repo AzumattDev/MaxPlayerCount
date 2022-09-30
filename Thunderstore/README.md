@@ -25,6 +25,8 @@ For Questions or Comments, find me in the Odin Plus Team Discord or in mine:
 <a href="https://discord.gg/pdHgy6Bsng"><img src="https://i.imgur.com/Xlcbmm9.png" href="https://discord.gg/pdHgy6Bsng" width="175" height="175"></a>
 
 > ## Changelog
+> ### v1.0.2
+> - Add incompatibility with OdinQOL, causing some issues on servers that have both installed.
 > ### v1.0.1
 >   - Fix max player count using CodeMatcher and correct operand type.
 > ### v1.0.0
