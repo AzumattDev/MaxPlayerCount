@@ -15,10 +15,11 @@ namespace MaxPlayerCount
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     [BepInIncompatibility("com.odinplusqol.mod")]
+    [BepInIncompatibility("org.bepinex.plugins.valheim_plus")]
     public class MaxPlayerCountPlugin : BaseUnityPlugin
     {
         internal const string ModName = "MaxPlayerCount";
-        internal const string ModVersion = "1.0.2";
+        internal const string ModVersion = "1.0.3";
         internal const string Author = "Azumatt";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
