@@ -8,7 +8,6 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using JetBrains.Annotations;
-using ServerSync;
 using Steamworks;
 
 namespace MaxPlayerCount
@@ -19,7 +18,7 @@ namespace MaxPlayerCount
     public class MaxPlayerCountPlugin : BaseUnityPlugin
     {
         internal const string ModName = "MaxPlayerCount";
-        internal const string ModVersion = "1.0.4";
+        internal const string ModVersion = "1.0.5";
         internal const string Author = "Azumatt";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -30,12 +29,8 @@ namespace MaxPlayerCount
         private static readonly ManualLogSource MaxPlayerCountLogger =
             BepInEx.Logging.Logger.CreateLogSource(ModName);
 
-        private static readonly ConfigSync ConfigSync = new(ModGUID)
-            { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
-
         public void Awake()
         {
-            ConfigSync.IsLocked = true;
             _maxPlayers = config("1 - General", "MaxPlayerCount", 10,
                 "Override the player count that valheim checks for. Default is the vanilla max of 10.");
 
@@ -92,12 +87,26 @@ namespace MaxPlayerCount
             [HarmonyTranspiler]
             static IEnumerable<CodeInstruction> MaxPlayersPatch(IEnumerable<CodeInstruction> instructions)
             {
-#if DEBUG
-                MaxPlayerCountLogger.LogMessage("Searching for Ldc_I4_S and setting it to " +
-                                                                     _maxPlayers.Value);
-#endif
-                return new CodeMatcher(instructions).MatchForward(false, new CodeMatch(OpCodes.Ldc_I4_S, (sbyte)10))
-                    .Set(OpCodes.Call, Transpilers.EmitDelegate(ReplacePlayerLimit).operand).InstructionEnumeration();
+                var codes = new List<CodeInstruction>(instructions);
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    if (codes[i].opcode == OpCodes.Call && codes[i].operand is MethodInfo method &&
+                        method.Name == "GetNrOfPlayers")
+                    {
+                        for (int j = i; j < codes.Count; j++)
+                        {
+                            if (codes[j].opcode == OpCodes.Ldc_I4_S)
+                            {
+                                codes[j].operand = ReplacePlayerLimit();
+                                break;
+                            }
+                        }
+
+                        break;
+                    }
+                }
+
+                return codes.AsEnumerable();
             }
 
             private static int ReplacePlayerLimit() => _maxPlayers.Value;
@@ -108,19 +117,9 @@ namespace MaxPlayerCount
 
         private static ConfigEntry<int> _maxPlayers = null!;
 
-        private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,
-            bool synchronizedSetting = true)
+        private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description)
         {
-            ConfigDescription extendedDescription =
-                new(
-                    description.Description +
-                    (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"),
-                    description.AcceptableValues, description.Tags);
-            ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
-            //var configEntry = Config.Bind(group, name, value, description);
-
-            SyncedConfigEntry<T> syncedConfigEntry = ConfigSync.AddConfigEntry(configEntry);
-            syncedConfigEntry.SynchronizedConfig = synchronizedSetting;
+            ConfigEntry<T> configEntry = Config.Bind(group, name, value, description);
 
             return configEntry;
         }
@@ -128,7 +127,7 @@ namespace MaxPlayerCount
         private ConfigEntry<T> config<T>(string group, string name, T value, string description,
             bool synchronizedSetting = true)
         {
-            return config(group, name, value, new ConfigDescription(description), synchronizedSetting);
+            return config(group, name, value, new ConfigDescription(description));
         }
 
         private class ConfigurationManagerAttributes
