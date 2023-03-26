@@ -1,0 +1,9 @@
+| `Version` | `Update Notes`                                                                                                                                                                    |
+|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **1.1.0** | - Update to work with Crossplay. Didn't really have much people to test it, but should work fine.<br/> - Alter the default value to be double vanilla. It's now at 20 by default. |
+| **1.0.5** | - Compile against latest game version (0.213.4)                                                                                                                                   |
+| **1.0.4** | - Update internals                                                                                                                                                                |
+| **1.0.3** | - Add incompatibility with ValheimPlus, causing some issues on servers that have both installed. (Now that they finally updated their shit)                                       |
+| **1.0.2** | - Add incompatibility with OdinQOL, causing some issues on servers that have both installed.                                                                                      |
+| **1.0.1** | - Fix max player count using CodeMatcher and correct operand type.                                                                                                                |
+| **1.0.0** | - Initial Release                                                                                                                                                                 |

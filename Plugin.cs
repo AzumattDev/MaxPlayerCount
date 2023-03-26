@@ -18,20 +18,22 @@ namespace MaxPlayerCount
     public class MaxPlayerCountPlugin : BaseUnityPlugin
     {
         internal const string ModName = "MaxPlayerCount";
-        internal const string ModVersion = "1.0.5";
+        internal const string ModVersion = "1.1.0";
         internal const string Author = "Azumatt";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
         private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
 
         private readonly Harmony _harmony = new(ModGUID);
+        public static MaxPlayerCountPlugin instance = null!;
 
         private static readonly ManualLogSource MaxPlayerCountLogger =
             BepInEx.Logging.Logger.CreateLogSource(ModName);
 
         public void Awake()
         {
-            _maxPlayers = config("1 - General", "MaxPlayerCount", 10,
+            instance = this;
+            _maxPlayers = config("1 - General", "MaxPlayerCount", 20,
                 "Override the player count that valheim checks for. Default is the vanilla max of 10.");
 
             Assembly assembly = Assembly.GetExecutingAssembly();
@@ -70,16 +72,6 @@ namespace MaxPlayerCount
             }
         }
 
-        [HarmonyPatch(typeof(SteamGameServer), nameof(SteamGameServer.SetMaxPlayerCount))]
-        public static class ChangeSteamServerVariables
-        {
-            private static void Prefix(ref int cPlayersMax)
-            {
-                int maxPlayers = _maxPlayers.Value;
-                if (maxPlayers >= 1) cPlayersMax = maxPlayers;
-            }
-        }
-
 
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_PeerInfo))]
         internal class MaxPlayersCount
@@ -109,7 +101,50 @@ namespace MaxPlayerCount
                 return codes.AsEnumerable();
             }
 
-            private static int ReplacePlayerLimit() => _maxPlayers.Value;
+            internal static int ReplacePlayerLimit() => _maxPlayers.Value;
+        }
+        
+        [HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Start))]
+        public static class FejdStartupPatch
+        {
+            static void Postfix(FejdStartup __instance)
+            {
+                MaxPlayerCountLogger.LogInfo($"Patching for backend: {ZNet.m_onlineBackend.ToString()}");
+                if (ZNet.m_onlineBackend == OnlineBackendType.PlayFab)
+                {
+                    instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateLobby)),
+                        transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
+                            nameof(MaxPlayerPlayfabTranspiler)))); 
+                }
+                else if(ZNet.m_onlineBackend == OnlineBackendType.Steamworks)
+                {
+                    instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(SteamGameServer), nameof(SteamGameServer.SetMaxPlayerCount)),
+                        prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
+                            nameof(SetMaxPlayerSteamPrefix))));
+                }
+
+            }
+            
+            private static void SetMaxPlayerSteamPrefix(ref int cPlayersMax)
+            {
+                int maxPlayers = _maxPlayers.Value;
+                if (maxPlayers >= 1) cPlayersMax = maxPlayers;
+            }
+            
+            public static IEnumerable<CodeInstruction> MaxPlayerPlayfabTranspiler(IEnumerable<CodeInstruction> instructions)
+            {
+                foreach (var instruction in instructions)
+                {
+                    if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 10)
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldc_I4, MaxPlayersCount.ReplacePlayerLimit());
+                    }
+                    else
+                    {
+                        yield return instruction;
+                    }
+                }
+            }
         }
 
 
@@ -145,7 +180,7 @@ namespace MaxPlayerCount
             public override bool IsValid(object value) => true;
 
             public override string ToDescriptionString() =>
-                "# Acceptable values: " + string.Join(", ", KeyboardShortcut.AllKeyCodes);
+                "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
         }
 
         #endregion

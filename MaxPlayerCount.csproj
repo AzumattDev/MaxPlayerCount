@@ -68,8 +68,11 @@
         <Reference Include="assembly_valheim, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
             <HintPath>$(GamePath)\valheim_Data\Managed\publicized_assemblies\assembly_valheim_publicized.dll</HintPath>
         </Reference>
-        <Reference Include="BepInEx, Version=5.4.19.0, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="BepInEx">
             <HintPath>$(GamePath)\BepInEx\core\BepInEx.dll</HintPath>
+        </Reference>
+        <Reference Include="PlayFab">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlayFab_publicized.dll</HintPath>
         </Reference>
         <Reference Include="System" />
         <Reference Include="System.Core" />
@@ -97,8 +100,9 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include=".gitignore" />
-        <Content Include="LICENSE.txt" />
+        <Content Include="LICENSE.md" />
         <Content Include="README.md" />
+        <Content Include="Thunderstore\CHANGELOG.md" />
         <Content Include="Thunderstore\icon.png" />
         <Content Include="Thunderstore\manifest.json" />
         <Content Include="Thunderstore\README.md" />
@@ -131,7 +135,7 @@
         </PropertyGroup>
     </Target>
     <Target Name="Copy" AfterTargets="GetAssemblyVersion">
-        <Exec Command="copy /Y &quot;$(TargetDir)$(AssemblyName).dll&quot; &quot;$(GamePath)\BepInEx\plugins\$(AssemblyName).dll&quot;" />
+        <!--<Exec Command="copy /Y &quot;$(TargetDir)$(AssemblyName).dll&quot; &quot;$(GamePath)\BepInEx\plugins\$(AssemblyName).dll&quot;" />-->
         <Exec Command="copy /Y &quot;README.md&quot; &quot;Thunderstore\README.md&quot;" />
     </Target>
     <Target Name="UpdateManifestVersion" AfterTargets="Copy" Condition="'$(OS)' == 'Windows_NT'">
@@ -146,7 +150,7 @@
     </Target>
     <Target Name="MakeThunderstorePackage" AfterTargets="UpdateManifestVersion" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <ItemGroup>
-            <PackageFiles Include="$(TargetDir)$(AssemblyName).dll; Thunderstore\README.md; Thunderstore\manifest.json; Thunderstore\icon.png;" />
+            <PackageFiles Include="$(TargetDir)$(AssemblyName).dll; Thunderstore\README.md; Thunderstore\CHANGELOG.md; Thunderstore\manifest.json; Thunderstore\icon.png;" />
         </ItemGroup>
         <MakeDir Directories="$(PackageDir)" />
         <Copy SourceFiles="@(PackageFiles)" DestinationFolder="$(PackageDir)" />

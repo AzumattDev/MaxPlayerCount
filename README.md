@@ -23,17 +23,3 @@ For Questions or Comments, find me in the Odin Plus Team Discord or in mine:
 
 [![https://i.imgur.com/XXP6HCU.png](https://i.imgur.com/XXP6HCU.png)](https://discord.gg/Pb6bVMnFb2)
 <a href="https://discord.gg/pdHgy6Bsng"><img src="https://i.imgur.com/Xlcbmm9.png" href="https://discord.gg/pdHgy6Bsng" width="175" height="175"></a>
-
-> ## Changelog
-> ### 1.0.5
-> - Compile against latest game version (0.213.4)
-> ### 1.0.4
-> - Update internals
-> ### v1.0.3
-> - Add incompatibility with ValheimPlus, causing some issues on servers that have both installed. (Now that they finally updated their shit)
-> ### v1.0.2
-> - Add incompatibility with OdinQOL, causing some issues on servers that have both installed.
-> ### v1.0.1
->   - Fix max player count using CodeMatcher and correct operand type.
-> ### v1.0.0
->  - Initial Release
