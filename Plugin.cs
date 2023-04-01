@@ -89,7 +89,13 @@ namespace MaxPlayerCount
                         {
                             if (codes[j].opcode == OpCodes.Ldc_I4_S)
                             {
+#if DEBUG
+                                MaxPlayerCountLogger.LogDebug($"Steam/Playfab ZNet.RPC_PeerInfo: Patching player limit {codes[j].operand.ToString()} to {_maxPlayers.Value}");
+#endif
                                 codes[j].operand = ReplacePlayerLimit();
+#if DEBUG
+                                MaxPlayerCountLogger.LogDebug($"Steam/Playfab ZNet.RPC_PeerInfo: Changed to {codes[j].operand.ToString()}");
+#endif
                                 break;
                             }
                         }
@@ -137,7 +143,15 @@ namespace MaxPlayerCount
                 {
                     if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 10)
                     {
-                        yield return new CodeInstruction(OpCodes.Ldc_I4, MaxPlayersCount.ReplacePlayerLimit());
+#if DEBUG
+                        MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateLobby: Patching player limit {instruction.operand.ToString()} to {_maxPlayers.Value}");
+#endif
+                        CodeInstruction newInstruction = new CodeInstruction(OpCodes.Ldc_I4, MaxPlayersCount.ReplacePlayerLimit());
+                        yield return newInstruction;
+
+#if DEBUG
+                        MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateLobby: Changed to {newInstruction.operand}");
+#endif
                     }
                     else
                     {
@@ -145,6 +159,7 @@ namespace MaxPlayerCount
                     }
                 }
             }
+
         }
 
 
