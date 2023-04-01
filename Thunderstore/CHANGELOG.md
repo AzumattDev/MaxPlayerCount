@@ -1,5 +1,6 @@
 | `Version` | `Update Notes`                                                                                                                                                                    |
 |-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **1.1.1** | - Patch an additional method for Crossplay. Might fix some of the issues people are having.                                                                                       |
 | **1.1.0** | - Update to work with Crossplay. Didn't really have much people to test it, but should work fine.<br/> - Alter the default value to be double vanilla. It's now at 20 by default. |
 | **1.0.5** | - Compile against latest game version (0.213.4)                                                                                                                                   |
 | **1.0.4** | - Update internals                                                                                                                                                                |

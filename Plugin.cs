@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -18,7 +19,7 @@ namespace MaxPlayerCount
     public class MaxPlayerCountPlugin : BaseUnityPlugin
     {
         internal const string ModName = "MaxPlayerCount";
-        internal const string ModVersion = "1.1.0";
+        internal const string ModVersion = "1.1.1";
         internal const string Author = "Azumatt";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -121,6 +122,9 @@ namespace MaxPlayerCount
                     instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateLobby)),
                         transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
                             nameof(MaxPlayerPlayfabTranspiler)))); 
+                    instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateAndJoinNetwork)),
+                        transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
+                            nameof(MaxPlayerPlayfabTranspiler2)))); 
                 }
                 else if(ZNet.m_onlineBackend == OnlineBackendType.Steamworks)
                 {
@@ -159,6 +163,40 @@ namespace MaxPlayerCount
                     }
                 }
             }
+
+            public static IEnumerable<CodeInstruction> MaxPlayerPlayfabTranspiler2(
+                IEnumerable<CodeInstruction> instructions)
+            {
+                foreach (var instruction in instructions)
+                {
+#if DEBUG
+                    MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: {instruction.opcode} {instruction.operand}");
+#endif
+                    if (instruction.opcode == OpCodes.Ldc_I4_S &&
+                        (sbyte)instruction.operand == 11) // 10 is the default player limit when looking at the IL code, but for some reason my debug log above prints 11 for where the 10 should be. Changing this to 11 fixes the issue.
+                    {
+#if DEBUG
+                        MaxPlayerCountLogger.LogDebug(
+                            $"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: Patching player limit {instruction.operand.ToString()} to {_maxPlayers.Value}");
+#endif
+                        CodeInstruction newInstruction =
+                            new CodeInstruction(OpCodes.Ldc_I4, MaxPlayersCount.ReplacePlayerLimit());
+                        yield return newInstruction;
+
+#if DEBUG
+                        MaxPlayerCountLogger.LogDebug(
+                            $"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: Changed to {newInstruction.operand}");
+#endif
+                    }
+                    else
+                    {
+                        yield return instruction;
+                    }
+                }
+            }
+
+
+
 
         }
 
