@@ -14,28 +14,23 @@ using Steamworks;
 namespace MaxPlayerCount
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
-    [BepInIncompatibility("com.odinplusqol.mod")]
     [BepInIncompatibility("org.bepinex.plugins.valheim_plus")]
     public class MaxPlayerCountPlugin : BaseUnityPlugin
     {
         internal const string ModName = "MaxPlayerCount";
-        internal const string ModVersion = "1.1.1";
+        internal const string ModVersion = "1.2.0";
         internal const string Author = "Azumatt";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
         private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
-
         private readonly Harmony _harmony = new(ModGUID);
         public static MaxPlayerCountPlugin instance = null!;
-
-        private static readonly ManualLogSource MaxPlayerCountLogger =
-            BepInEx.Logging.Logger.CreateLogSource(ModName);
+        private static readonly ManualLogSource MaxPlayerCountLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
 
         public void Awake()
         {
             instance = this;
-            _maxPlayers = config("1 - General", "MaxPlayerCount", 20,
-                "Override the player count that valheim checks for. Default is the vanilla max of 10.");
+            _maxPlayers = config("1 - General", "MaxPlayerCount", 20, "Override the player count that valheim checks for. Default is the vanilla max of 10.");
 
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
@@ -108,39 +103,39 @@ namespace MaxPlayerCount
                 return codes.AsEnumerable();
             }
 
-            internal static int ReplacePlayerLimit() => _maxPlayers.Value;
+            internal static int ReplacePlayerLimit(bool playfab = false) => playfab ? _maxPlayers.Value + 1 : _maxPlayers.Value;
         }
-        
+
         [HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Start))]
         public static class FejdStartupPatch
         {
             static void Postfix(FejdStartup __instance)
             {
                 MaxPlayerCountLogger.LogInfo($"Patching for backend: {ZNet.m_onlineBackend.ToString()}");
-                if (ZNet.m_onlineBackend == OnlineBackendType.PlayFab)
+                switch (ZNet.m_onlineBackend)
                 {
-                    instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateLobby)),
-                        transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
-                            nameof(MaxPlayerPlayfabTranspiler)))); 
-                    instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateAndJoinNetwork)),
-                        transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
-                            nameof(MaxPlayerPlayfabTranspiler2)))); 
+                    case OnlineBackendType.PlayFab:
+                        instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateLobby)),
+                            transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
+                                nameof(MaxPlayerPlayfabTranspiler))));
+                        instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateAndJoinNetwork)),
+                            transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
+                                nameof(MaxPlayerPlayfabTranspiler2))));
+                        break;
+                    case OnlineBackendType.Steamworks:
+                        instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(SteamGameServer), nameof(SteamGameServer.SetMaxPlayerCount)),
+                            prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
+                                nameof(SetMaxPlayerSteamPrefix))));
+                        break;
                 }
-                else if(ZNet.m_onlineBackend == OnlineBackendType.Steamworks)
-                {
-                    instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(SteamGameServer), nameof(SteamGameServer.SetMaxPlayerCount)),
-                        prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
-                            nameof(SetMaxPlayerSteamPrefix))));
-                }
-
             }
-            
+
             private static void SetMaxPlayerSteamPrefix(ref int cPlayersMax)
             {
                 int maxPlayers = _maxPlayers.Value;
                 if (maxPlayers >= 1) cPlayersMax = maxPlayers;
             }
-            
+
             public static IEnumerable<CodeInstruction> MaxPlayerPlayfabTranspiler(IEnumerable<CodeInstruction> instructions)
             {
                 foreach (var instruction in instructions)
@@ -164,8 +159,7 @@ namespace MaxPlayerCount
                 }
             }
 
-            public static IEnumerable<CodeInstruction> MaxPlayerPlayfabTranspiler2(
-                IEnumerable<CodeInstruction> instructions)
+            public static IEnumerable<CodeInstruction> MaxPlayerPlayfabTranspiler2(IEnumerable<CodeInstruction> instructions)
             {
                 foreach (var instruction in instructions)
                 {
@@ -176,16 +170,13 @@ namespace MaxPlayerCount
                         (sbyte)instruction.operand == 11) // 10 is the default player limit when looking at the IL code, but for some reason my debug log above prints 11 for where the 10 should be. Changing this to 11 fixes the issue.
                     {
 #if DEBUG
-                        MaxPlayerCountLogger.LogDebug(
-                            $"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: Patching player limit {instruction.operand.ToString()} to {_maxPlayers.Value}");
+                        MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: Patching player limit {instruction.operand.ToString()} to {_maxPlayers.Value}");
 #endif
-                        CodeInstruction newInstruction =
-                            new CodeInstruction(OpCodes.Ldc_I4, MaxPlayersCount.ReplacePlayerLimit());
+                        CodeInstruction newInstruction = new CodeInstruction(OpCodes.Ldc_I4, MaxPlayersCount.ReplacePlayerLimit(true));
                         yield return newInstruction;
 
 #if DEBUG
-                        MaxPlayerCountLogger.LogDebug(
-                            $"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: Changed to {newInstruction.operand}");
+                        MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: Changed to {newInstruction.operand}");
 #endif
                     }
                     else
@@ -194,10 +185,6 @@ namespace MaxPlayerCount
                     }
                 }
             }
-
-
-
-
         }
 
 

@@ -1,9 +1,9 @@
 {
   "name": "MaxPlayerCount",
-  "version_number": "1.1.1",
+  "version_number": "1.2.0",
   "website_url": "https://discord.gg/Pb6bVMnFb2",
   "description": "Change the max player count available for your server. Default value is the double that of vanilla's max of 10. Not needed if you have another mod that does it.",
   "dependencies": [
-    "denikson-BepInExPack_Valheim-5.4.2100"
+    "denikson-BepInExPack_Valheim-5.4.2105"
   ]
 }
