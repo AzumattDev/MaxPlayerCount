@@ -140,7 +140,7 @@ namespace MaxPlayerCount
             {
                 foreach (var instruction in instructions)
                 {
-                    if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 10)
+                    if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 11)
                     {
 #if DEBUG
                         MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateLobby: Patching player limit {instruction.operand.ToString()} to {_maxPlayers.Value}");
