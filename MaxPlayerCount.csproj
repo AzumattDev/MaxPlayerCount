@@ -12,7 +12,7 @@
         <AssemblyName>MaxPlayerCount</AssemblyName>
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
-        <LangVersion>10</LangVersion>
+        <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -81,8 +81,29 @@
         <Reference Include="BepInEx">
             <HintPath>$(GamePath)\BepInEx\core\BepInEx.dll</HintPath>
         </Reference>
+        <Reference Include="PlatformTools.Common">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlatformTools.Common_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="PlatformTools.Core">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlatformTools.Core_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="PlatformTools.Platform.Dev">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlatformTools.Platform.Dev_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="PlatformTools.Platform.Playstation">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlatformTools.Platform.Playstation_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="PlatformTools.Platform.Steam">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlatformTools.Platform.Steam_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="PlatformToolsWrapper">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlatformToolsWrapper_publicized.dll</HintPath>
+        </Reference>
         <Reference Include="PlayFab">
             <HintPath>$(PublicizedAssembliesPath)\PlayFab_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="PlayFabParty">
+          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\PlayFabParty_publicized.dll</HintPath>
         </Reference>
         <Reference Include="System"/>
         <Reference Include="System.Core"/>

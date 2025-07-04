@@ -18,7 +18,7 @@ namespace MaxPlayerCount
     public class MaxPlayerCountPlugin : BaseUnityPlugin
     {
         internal const string ModName = "MaxPlayerCount";
-        internal const string ModVersion = "1.2.3";
+        internal const string ModVersion = "1.2.4";
         internal const string Author = "Azumatt";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -76,12 +76,11 @@ namespace MaxPlayerCount
             static IEnumerable<CodeInstruction> MaxPlayersPatch(IEnumerable<CodeInstruction> instructions)
             {
                 var codes = new List<CodeInstruction>(instructions);
-                for (int i = 0; i < codes.Count; i++)
+                for (int i = 0; i < codes.Count; ++i)
                 {
-                    if (codes[i].opcode == OpCodes.Call && codes[i].operand is MethodInfo method &&
-                        method.Name == "GetNrOfPlayers")
+                    if (codes[i].opcode == OpCodes.Call && codes[i].operand is MethodInfo method && method.Name == "GetNrOfPlayers")
                     {
-                        for (int j = i; j < codes.Count; j++)
+                        for (int j = i; j < codes.Count; ++j)
                         {
                             if (codes[j].opcode == OpCodes.Ldc_I4_S)
                             {
@@ -116,16 +115,13 @@ namespace MaxPlayerCount
                 {
                     case OnlineBackendType.PlayFab:
                         instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateLobby)),
-                            transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
-                                nameof(MaxPlayerPlayfabTranspiler))));
+                            transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch), nameof(MaxPlayerPlayfabTranspiler))));
                         instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(ZPlayFabMatchmaking), nameof(ZPlayFabMatchmaking.CreateAndJoinNetwork)),
-                            transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
-                                nameof(MaxPlayerPlayfabTranspiler2))));
+                            transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch), nameof(MaxPlayerPlayfabTranspiler2))));
                         break;
                     case OnlineBackendType.Steamworks:
                         instance._harmony.Patch(AccessTools.DeclaredMethod(typeof(SteamGameServer), nameof(SteamGameServer.SetMaxPlayerCount)),
-                            prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch),
-                                nameof(SetMaxPlayerSteamPrefix))));
+                            prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FejdStartupPatch), nameof(SetMaxPlayerSteamPrefix))));
                         break;
                 }
             }
@@ -140,6 +136,9 @@ namespace MaxPlayerCount
             {
                 foreach (var instruction in instructions)
                 {
+#if DEBUG
+                    MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateLobby: {instruction.opcode} {instruction.operand}");
+#endif
                     if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 11)
                     {
 #if DEBUG
@@ -167,7 +166,7 @@ namespace MaxPlayerCount
                     MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: {instruction.opcode} {instruction.operand}");
 #endif
                     if (instruction.opcode == OpCodes.Ldc_I4_S &&
-                        (sbyte)instruction.operand == 11) // 10 is the default player limit when looking at the IL code, but for some reason my debug log above prints 11 for where the 10 should be. Changing this to 11 fixes the issue.
+                        (sbyte)instruction.operand == 11) // 10 is the default player limit when looking at the IL code on the client, but for dedicated servers the above prints 11 for where the 10 would be. Changing this to 11 fixes the issue.
                     {
 #if DEBUG
                         MaxPlayerCountLogger.LogDebug($"Playfab ZPlayfabMatchmaking.CreateAndJoinNetwork: Patching player limit {instruction.operand.ToString()} to {_maxPlayers.Value}");
